@@ -52,3 +52,26 @@ export function deleteChat(chats: Record<string, Chat>, id: string): Record<stri
   const { [id]: _, ...rest } = chats
   return rest
 }
+
+// --- Checklist state persistence ---
+
+const CHECKLIST_KEY = 'lingyu-checklist'
+
+export function loadChecklistState(): Record<string, string[]> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const data = localStorage.getItem(CHECKLIST_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveChecklistState(key: string, checkedIds: string[]) {
+  if (typeof window === 'undefined') return
+  try {
+    const state = loadChecklistState()
+    state[key] = checkedIds
+    localStorage.setItem(CHECKLIST_KEY, JSON.stringify(state))
+  } catch { /* quota exceeded */ }
+}

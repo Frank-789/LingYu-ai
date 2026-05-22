@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { Chat, Message } from '@/types'
 import { loadChats, saveChats, createChat, addMessage, deleteChat } from '@/lib/storage'
+import { parseBlocks } from '@/lib/block-parser'
 
 export function useChat() {
   const [chats, setChats] = useState<Record<string, Chat>>({})
@@ -124,6 +125,21 @@ export function useChat() {
           const lastIdx = msgs.length - 1
           if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
             msgs[lastIdx] = { ...msgs[lastIdx], content: fullContent }
+          }
+          return { ...prev, [chatWithUser.id]: { ...c, messages: msgs, updatedAt: Date.now() } }
+        })
+      }
+
+      // Post-process: parse structured blocks from completed content
+      const { cleanedContent, blocks } = parseBlocks(fullContent)
+      if (blocks.length > 0) {
+        setChats((prev) => {
+          const c = prev[chatWithUser.id]
+          if (!c) return prev
+          const msgs = [...c.messages]
+          const lastIdx = msgs.length - 1
+          if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+            msgs[lastIdx] = { ...msgs[lastIdx], content: cleanedContent, blocks }
           }
           return { ...prev, [chatWithUser.id]: { ...c, messages: msgs, updatedAt: Date.now() } }
         })

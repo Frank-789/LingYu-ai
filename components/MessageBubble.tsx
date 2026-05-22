@@ -5,6 +5,7 @@ import { Copy, Check, User } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Message } from '@/types'
+import { BlockRenderer } from './blocks/BlockRenderer'
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
@@ -54,11 +55,18 @@ export function MessageBubble({ message }: { message: Message }) {
           {isUser ? (
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-zinc-900 dark:prose-pre:bg-black prose-code:text-orange-500 dark:prose-code:text-orange-400 prose-a:text-orange-500">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {message.content || '...'}
-              </ReactMarkdown>
-            </div>
+            <>
+              {message.blocks && message.blocks.length > 0 && (
+                <BlockRenderer blocks={message.blocks} />
+              )}
+              {message.content && (
+                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-zinc-900 dark:prose-pre:bg-black prose-code:text-orange-500 dark:prose-code:text-orange-400 prose-a:text-orange-500">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </>
           )}
         </div>
         {!isUser && message.content && (
