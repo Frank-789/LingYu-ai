@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 灵语 (LingYu) · 果潮联盟 AI 营销助手
 
-## Getting Started
+面向水果商户、果农、农产品电商从业者的 AI 营销助手。
 
-First, run the development server:
+## 功能模块
+
+### 💬 AI 对话
+基于 DeepSeek 的智能对话，提供文案创作、营销策略、客户沟通等 AI 辅助能力。
+
+### 🏷️ 丰富的内容输出
+- **智能价签** — 可视化促销价签，支持下载分享
+- **文案评分卡** — 数据化分析文案质量，提供改进建议
+- **应季水果日历** — 领域知识可视化，帮助商户做季节营销规划
+- **营销待办清单** — 交互式任务清单，支持进度追踪
+
+### 🎬 视频工厂 (Video Studio)
+面向水果商户的 AI 短视频营销工具：
+
+1. **产品信息录入** — 填写水果名称、产地、规格、价格、卖点等
+2. **AI 脚本生成** — 调用 DeepSeek 生成适配抖音/快手/小红书等平台的脚本
+3. **分镜设计** — 自动生成 5-8 个分镜方案
+4. **素材管理** — 上传图片/视频素材，分类管理
+5. **素材诊断** — AI 分析素材缺口，提供补拍或 AI 生成建议
+6. **视频生成** — 对接 Seedance 视频生成 API (支持 Mock 模式预览)
+7. **预览下载** — 视频播放与下载
+
+### 📊 销售中心 (CRM)
+轻量级客户管理与销售转化工具：
+
+1. **数据看板** — 今日新增线索、待跟进客户、本月成交、销售额等核心指标
+2. **客户管理** — 新增/编辑/跟进线索，多维度筛选搜索
+3. **看板视图** — 六阶段销售漏斗（新线索→已联系→有意向→已下单→待复购→已流失）
+4. **AI 智能建议** — 自动生成跟进话术和产品推荐
+5. **订单管理** — 记录订单与售后信息
+6. **营销页面** — 自动生成产品销售页面，一键复制购买话术
+
+### 技术栈
+
+- **框架**: Next.js 16 (App Router)
+- **UI**: React 19 + Tailwind CSS v4 + Framer Motion
+- **AI**: DeepSeek API (流式 SSE)
+- **图标**: lucide-react
+- **存储**: localStorage
+- **部署**: Vercel
+
+## 快速开始
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+环境变量配置 (.env.local):
+- `DEEPSEEK_API_KEY` — DeepSeek API 密钥（必填）
+- `ARK_API_KEY` — Seedance / Ark 密钥（可选，视频生成用）
+- `SEEDANCE_MODEL` — Seedance 模型名（可选）
+- `SEEDANCE_BASE_URL` — Seedance API 地址（可选）
+- `VIDEO_PROVIDER` — 视频服务商（mock/seedance，默认 mock）
