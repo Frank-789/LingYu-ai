@@ -1,4 +1,5 @@
 import type { ProductVideoBrief, StoryboardShot } from "@/lib/types/video"
+import { extractJson } from "@/lib/extract-json"
 
 const DEEPSEEK_BASE = "https://api.deepseek.com/v1"
 
@@ -71,13 +72,13 @@ ${fullScript}
     throw new Error("Empty response from DeepSeek")
   }
 
-  // Parse JSON from response
-  const jsonStr = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim()
+  // Parse JSON from AI response (handles markdown wrapping, leading text, etc.)
+  const result = extractJson<StoryboardShot[]>(content)
 
-  try {
-    const shots: StoryboardShot[] = JSON.parse(jsonStr)
-    return shots
-  } catch {
+  if (!result) {
+    console.error("Failed to parse storyboard result. Raw content:", content.slice(0, 500))
     throw new Error("Failed to parse storyboard result from AI response")
   }
+
+  return result
 }
