@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus, Kanban, Table2, Menu } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { Plus, Kanban, Table2, Menu, RotateCcw } from 'lucide-react'
 import type { CustomerLead, LeadStatus, DashboardData } from '@/lib/types/crm'
 import { listLeads, createLead, updateLeadStatus } from '@/lib/repositories/leads-repository'
 import { getDashboardStats } from '@/lib/repositories/orders-repository'
@@ -10,6 +10,10 @@ import { LeadForm } from '@/components/crm/LeadForm'
 import { LeadTable } from '@/components/crm/LeadTable'
 import { LeadKanban } from '@/components/crm/LeadKanban'
 import { LeadDetailDrawer } from '@/components/crm/LeadDetailDrawer'
+import { DailyOperationsPanel } from '@/components/crm/DailyOperationsPanel'
+import { TodayFollowUpPanel } from '@/components/crm/TodayFollowUpPanel'
+import { initDemoData, runDailyGrowth, restoreDemoData } from '@/lib/demo-data'
+import type { DailyGrowthResult } from '@/lib/demo-data'
 
 type ViewMode = 'kanban' | 'table'
 
@@ -54,12 +58,32 @@ export default function CrmPage() {
   const [showForm, setShowForm] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [growthResult, setGrowthResult] = useState<DailyGrowthResult | null>(null)
+  const [justInitialized, setJustInitialized] = useState(false)
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
+  const initialized = useRef(false)
 
   const refreshLeads = useCallback(() => {
     setLeads(listLeads())
   }, [])
 
+  // Initialize demo data and run daily growth on first mount
   useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
+    // Seed demo data if no data exists
+    const initialized_ = initDemoData()
+    if (initialized_) {
+      setJustInitialized(true)
+    }
+
+    // Run daily growth (only once per day)
+    const growth = runDailyGrowth()
+    if (growth) {
+      setGrowthResult(growth)
+    }
+
     refreshLeads()
   }, [refreshLeads])
 
@@ -86,6 +110,14 @@ export default function CrmPage() {
     setSelectedLead(lead)
   }
 
+  const handleRestoreDemo = () => {
+    restoreDemoData()
+    setShowRestoreConfirm(false)
+    setGrowthResult(null)
+    setJustInitialized(true)
+    refreshLeads()
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#0A0A0B] text-zinc-900 dark:text-zinc-100">
       {/* Top Navigation Header */}
@@ -100,10 +132,18 @@ export default function CrmPage() {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white text-xs font-bold">
             灵
           </div>
-          <span className="font-semibold text-sm">CRM</span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">销售转化与客户管理</span>
+          <span className="font-semibold text-sm">销售中心</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">客户管理与销售转化</span>
         </div>
         <div className="flex items-center gap-2">
+          {/* Restore demo data button — subtle */}
+          <button
+            onClick={() => setShowRestoreConfirm(true)}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            title="恢复演示数据"
+          >
+            <RotateCcw size={14} />
+          </button>
           {/* View Toggle */}
           <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
             <button
@@ -139,10 +179,52 @@ export default function CrmPage() {
         </div>
       </header>
 
+      {/* Restore confirmation modal */}
+      {showRestoreConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+            <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200 mb-2">恢复演示数据</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              此操作将清除所有当前客户数据，并重新填充 24 条演示数据。此操作不可撤销，确定继续吗？
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowRestoreConfirm(false)}
+                className="px-4 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleRestoreDemo}
+                className="px-4 py-2 text-xs rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+              >
+                确认恢复
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
         {/* Metrics Cards */}
         <SalesMetricsCards data={dashboard} />
+
+        {/* Today's Operations Panel */}
+        <DailyOperationsPanel
+          growthResult={growthResult}
+          todayNewLeads={dashboard.newLeadsToday}
+          todayFollowUpCount={dashboard.pendingFollowUps}
+          todayOrderCount={dashboard.convertedLeads}
+          todaySales={dashboard.totalRevenue}
+          justInitialized={justInitialized}
+        />
+
+        {/* Today's Follow-up List */}
+        <TodayFollowUpPanel
+          leads={leads}
+          onSelectLead={handleSelectLead}
+        />
 
         {/* Kanban or Table */}
         {viewMode === 'kanban' ? (

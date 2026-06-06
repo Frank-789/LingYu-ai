@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, ArrowUpDown } from 'lucide-react'
+import { Search, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { CustomerLead, LeadStatus, LeadSource } from '@/lib/types/crm'
 
 const statusLabels: Record<string, string> = {
@@ -22,6 +22,18 @@ const statusColors: Record<string, string> = {
   lost: 'text-zinc-500 bg-zinc-500/10',
 }
 
+const sourceLabels: Record<string, string> = {
+  douyin: '抖音',
+  xiaohongshu: '小红书',
+  wechat: '微信',
+  offline: '线下',
+  referral: '推荐',
+  video: '视频号',
+  other: '其他',
+}
+
+const PAGE_SIZE = 12
+
 interface LeadTableProps {
   leads: CustomerLead[]
   onSelectLead: (lead: CustomerLead) => void
@@ -32,6 +44,7 @@ export function LeadTable({ leads, onSelectLead }: LeadTableProps) {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | ''>('')
   const [sourceFilter, setSourceFilter] = useState<LeadSource | ''>('')
   const [sortAsc, setSortAsc] = useState(false)
+  const [page, setPage] = useState(1)
 
   const filteredLeads = useMemo(() => {
     let result = [...leads]
@@ -65,6 +78,16 @@ export function LeadTable({ leads, onSelectLead }: LeadTableProps) {
 
     return result
   }, [leads, keyword, statusFilter, sourceFilter, sortAsc])
+
+  // Paginate
+  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paginatedLeads = filteredLeads.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  // Reset page when filters change
+  useMemo(() => {
+    if (page > totalPages) setPage(1)
+  }, [filteredLeads.length])
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
@@ -140,14 +163,14 @@ export function LeadTable({ leads, onSelectLead }: LeadTableProps) {
             </tr>
           </thead>
           <tbody>
-            {filteredLeads.length === 0 ? (
+            {paginatedLeads.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
                   暂无数据
                 </td>
               </tr>
             ) : (
-              filteredLeads.map((lead) => (
+              paginatedLeads.map((lead) => (
                 <tr
                   key={lead.id}
                   onClick={() => onSelectLead(lead)}
@@ -157,7 +180,7 @@ export function LeadTable({ leads, onSelectLead }: LeadTableProps) {
                     {lead.name}
                   </td>
                   <td className="px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400">
-                    {lead.source}
+                    {sourceLabels[lead.source] || lead.source}
                   </td>
                   <td className="px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400">
                     {lead.interestedProduct || '-'}
@@ -188,6 +211,33 @@ export function LeadTable({ leads, onSelectLead }: LeadTableProps) {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-200 dark:border-zinc-800">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            第 {safePage} / {totalPages} 页
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, safePage - 1))}
+              disabled={safePage <= 1}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={14} />
+              上一页
+            </button>
+            <button
+              onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+              disabled={safePage >= totalPages}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              下一页
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { Star, Tag } from 'lucide-react'
+import { Star, Tag, Calendar } from 'lucide-react'
 import type { CustomerLead } from '@/lib/types/crm'
 
 const statusLabels: Record<string, string> = {
@@ -21,36 +21,58 @@ const statusColors: Record<string, string> = {
   lost: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20',
 }
 
+const sourceLabels: Record<string, string> = {
+  douyin: '抖音',
+  xiaohongshu: '小红书',
+  wechat: '微信',
+  offline: '线下',
+  referral: '推荐',
+  video: '视频号',
+  other: '其他',
+}
+
+const tagLabels: Record<string, string> = {
+  high_value: '高价值',
+  gift_customer: '送礼',
+  wholesale: '批发',
+  old_customer: '老客',
+  price_sensitive: '价格敏感',
+  festival_buyer: '节日买家',
+  after_sales_sensitive: '售后敏感',
+}
+
 interface LeadCardProps {
   lead: CustomerLead
   onClick?: () => void
 }
 
 export function LeadCard({ lead, onClick }: LeadCardProps) {
+  const isOverdue = lead.nextFollowUpAt && new Date(lead.nextFollowUpAt).getTime() < Date.now()
+
   return (
     <div
       onClick={onClick}
       className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 cursor-pointer hover:border-orange-500/40 hover:shadow-sm hover:shadow-orange-500/5 transition-all"
     >
       {/* Name and Source */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-1.5">
         <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">
           {lead.name}
         </span>
-        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
-          {lead.source}
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+          {sourceLabels[lead.source] || lead.source}
         </span>
       </div>
 
       {/* Interested Product */}
       {lead.interestedProduct && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2 truncate">
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1.5 truncate">
           {lead.interestedProduct}
         </p>
       )}
 
       {/* Intention Level (stars) */}
-      <div className="flex items-center gap-0.5 mb-2">
+      <div className="flex items-center gap-0.5 mb-1.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
@@ -62,21 +84,38 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
 
       {/* Tags */}
       {lead.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 mb-1.5">
           {lead.tags.map((tag) => (
             <span
               key={tag}
               className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
             >
               <Tag size={8} />
-              {tag}
+              {tagLabels[tag] || tag}
             </span>
           ))}
         </div>
       )}
 
+      {/* Next follow-up time */}
+      {lead.nextFollowUpAt && (
+        <div className={`flex items-center gap-1 mb-1.5 ${isOverdue ? 'text-red-500' : 'text-zinc-400 dark:text-zinc-500'}`}>
+          <Calendar size={10} />
+          <span className="text-[10px]">
+            {isOverdue ? '已超时' : new Date(lead.nextFollowUpAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+          </span>
+        </div>
+      )}
+
+      {/* Short note */}
+      {lead.note && (
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-relaxed line-clamp-2 mb-1.5">
+          {lead.note}
+        </p>
+      )}
+
       {/* Status Badge */}
-      <div className="mt-2">
+      <div className="mt-1">
         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${statusColors[lead.status] || statusColors.new}`}>
           {statusLabels[lead.status] || '新线索'}
         </span>
